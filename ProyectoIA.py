@@ -1,6 +1,6 @@
 
 import heapq #utilizamos una priority queue
-import pandas as pdb #hay que instalar pandas y openpyxl
+import pandas as pd #hay que instalar pandas y openpyxl
 
 class Parada:
     def __init__(self, estado,index=0, acumulado=0, padre=None,  heuristica=0):
@@ -10,17 +10,28 @@ class Parada:
         self.padre = padre #parada de la que viene
         self.heuristica = heuristica #distancia desde el nodo hasta el puesto como final
 
-Datos = pdb.ExcelFile('Datos/datos.xlsx')
+
+Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA', index_col=0)
+Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
+Heur.at['madrid','barcelona']
+
+
+
+
+
+
 
 # Heurist = [[ciu1, distciud2, distciud3, distciud4],     #vamos a declarar una matriz con la heuristica
 #                  [distciu1, ciud2, distciud3, distciud4]]
 
 # Dist = [[ciu1, distciud2, distciud3, distciud4],       #vamos a hacer una matriz con las distancias entre lugares
 #                  [distciu1, ciud2, distciud3, distciud4]]
-print(Datos.sheet_names)
-print(Datos.parse('Hoja1'))
-Heur = Datos.parse('Hoja1')
-print(Heur[1,1])
+# print(Datos.sheet_names)
+# Dist = Datos.parse('DISTANCIAS')
+# Heur = Datos.parse('HEURISTICA')
+# print(Heur)
+# print(Dist)
+# Datos
 # def Heuristica(inicio, final):
 #     return Heurist[inicio.index, final.index]
 # def Distancia(inicio, final):
