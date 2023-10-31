@@ -13,7 +13,7 @@ class Parada:
 
 Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA', index_col=0)
 Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
-Heur.at['madrid','barcelona']
+print(Heur.at['madrid','barcelona'])
 
 
 
