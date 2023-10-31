@@ -20,29 +20,6 @@ print(Heur.at['madrid','barcelona'])
 
 
 
-
-# Heurist = [[ciu1, distciud2, distciud3, distciud4],     #vamos a declarar una matriz con la heuristica
-#                  [distciu1, ciud2, distciud3, distciud4]]
-
-# Dist = [[ciu1, distciud2, distciud3, distciud4],       #vamos a hacer una matriz con las distancias entre lugares
-#                  [distciu1, ciud2, distciud3, distciud4]]
-# print(Datos.sheet_names)
-# Dist = Datos.parse('DISTANCIAS')
-# Heur = Datos.parse('HEURISTICA')
-# print(Heur)
-# print(Dist)
-# Datos
-# def Heuristica(inicio, final):
-#     return Heurist[inicio.index, final.index]
-# def Distancia(inicio, final):
-#     return Dist[inicio.index, final.index]
-
-
-
-
-
-
-
 # class Nodo:
 #     def __init__(self, state, parent=None, action=None, cost=0, heuristic=0):
 #         self.state = state  #Abierto/cerrado
