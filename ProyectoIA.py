@@ -29,7 +29,7 @@ Datos = pdb.ExcelFile('Datos/datos.xlsx')
 Heur = Datos.parse('Hoja1')
 print(Heur)
 
-print(ft_buscar(Heur.get('madrid'), 0))
+print(ft_buscar(Heur.get('ciudad'), 'barcelona'))
 print(Heur.get('barcelona'))
 # def Heuristica(inicio, final):
 #     return Heurist[inicio.index, final.index]
