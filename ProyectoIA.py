@@ -10,6 +10,15 @@ class Parada:
         self.padre = padre #parada de la que viene
         self.heuristica = heuristica #distancia desde el nodo hasta el puesto como final
 
+def ft_buscar(array, estacion):
+    i = 0
+    for elemento in array:
+        if elemento == estacion:
+            return i
+        else:
+            i = i + 1
+    return None
+
 Datos = pdb.ExcelFile('Datos/datos.xlsx')
 
 # Heurist = [[ciu1, distciud2, distciud3, distciud4],     #vamos a declarar una matriz con la heuristica
@@ -17,10 +26,10 @@ Datos = pdb.ExcelFile('Datos/datos.xlsx')
 
 # Dist = [[ciu1, distciud2, distciud3, distciud4],       #vamos a hacer una matriz con las distancias entre lugares
 #                  [distciu1, ciud2, distciud3, distciud4]]
-print(Datos.sheet_names)
-print(Datos.parse('Hoja1'))
 Heur = Datos.parse('Hoja1')
-print(Heur[1,1])
+print(Heur)
+
+print(ft_buscar(Heur.get('madrid'), 0))
 # def Heuristica(inicio, final):
 #     return Heurist[inicio.index, final.index]
 # def Distancia(inicio, final):
