@@ -86,15 +86,23 @@ def Main():
     while final not in G.nodes:
         final = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")  
     while True:
-        Hora = input(f"A que hora desea ir desde {inicial} a {final}, Escriba la hora con el formato 13:25\n")
+        Hora = input(f"A que hora desea ir desde {inicial} a {final}, Escriba la hora con el formato HH:MM de 24 horas\n")
         if len(Hora.split(":")) == 2:
             horas, minutos = Hora.split(":")
             if horas.isdigit() and minutos.isdigit():
                 horas = int(horas)
                 minutos = int(minutos)
-                if 0 <= horas <= 23 and 0 <= minutos <= 59:
+                if 5 <= horas <= 23 and 0 <= minutos <= 59:
                     break  
-        print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
+                else:
+                    if horas <=4 and 0 <= minutos <= 59:
+                        print("El metro permanece cerrado desde las 00:00 hasta las 05:00, selecciona otra hora por favor.")
+                    else:
+                        print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
+            else:
+                print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
+        else:
+            print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
 
     Hora = horas
     Opcion = input(f"¿Quiere que la ruta tenga los menos transbordos posibles o que sea la mas rápida? teclee [Transbordos/Rapida]\n")
