@@ -12,7 +12,7 @@ nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
 
 #------------FALTA-------------
 #¿coste transbordos?
-#¿opcion elegir con menos transbordos?
+
 
 nodosAbiertos = []
 nodosCerrados = []
@@ -31,7 +31,7 @@ def caminoMasCorto():
     path.append(final)
     path2.append(final)
     checkPath(final)
-    pathWeight.append(G.nodes[inicial].get("Heuristica"))#que compruebe el path
+    pathWeight.append(G.nodes[inicial].get("Heuristica") + G.nodes[inicial].get("Coste"))#que compruebe el path
     print(path2)
     print(pathWeight, "total = " , sum(pathWeight))
 
