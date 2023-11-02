@@ -93,7 +93,7 @@ Main()
             
 
 
- #----COMPROBACIONES GRAFO-----
+ #----COMPROBACIONES GRAFO Y PLOT-----
 print(G)
 # print([a for a in G.edges(data=True)])
 pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
