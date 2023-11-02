@@ -7,22 +7,6 @@ Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
 
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
-<<<<<<< HEAD
-
-
-nodosAbiertos = []
-nodosCerrados = []
-path = []
-
-
-def caminoMasCorto(inicial, final):
-    nx.set_node_attributes(G, {inicial: {"Coste": 0, "Heuristica": CheckHeur(inicial,final), "Padre" : inicial}})                        #añado al primero su heuristica
-    caminoMasCortoRec(inicial, final)#lo mando de forma recursiva
-    path.append(final)
-    checkPath(final)                                                                                               #que compruebe el path
-    print(path)
-
-=======
 
 #------------FALTA-------------
 #retraso por horas puntas
@@ -44,7 +28,6 @@ def caminoMasCorto(inicial, final):
     print(path)
     print(pathWeight, "total = " , sum(pathWeight))
 
->>>>>>> PruebasFran
 def caminoMasCortoRec(inicial, final):
     global nodosAbiertos
     for actual in nx.neighbors(G, inicial):
@@ -69,16 +52,6 @@ def CheckHeur(actual, final):
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
-<<<<<<< HEAD
-    
-    if  Padre != final:
-        path.append(Padre)
-        checkPath(Padre)
-    
-    
-
-caminoMasCorto('A Coruña','Barcelona')             
-=======
     Peso = G.nodes[final].get("Coste") + G.nodes[final].get("Heuristica") 
     if  Padre != final:
         path.append(Padre)
@@ -117,23 +90,12 @@ def Main():
         
 Main()
              
->>>>>>> PruebasFran
             
 
 
  #----COMPROBACIONES GRAFO-----
-<<<<<<< HEAD
-print(G)
-# print([a for a in G.edges(data=True)])
-pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
-colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
-nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
-nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
-plt.show()
-=======
 # print(G)
 # # print([a for a in G.edges(data=True)])
 # pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
 # nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10)
 # plt.show()
->>>>>>> PruebasFran
