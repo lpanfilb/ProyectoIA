@@ -10,9 +10,6 @@ Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
 
-#------------FALTA-------------
-#¿coste transbordos?
-
 
 nodosAbiertos = []
 nodosCerrados = []
