@@ -1,115 +1,130 @@
+import networkx as nx #tratamiento de grafos
+import pandas as pd #hay que instalar pandas y openpyxl
+import matplotlib.pyplot as plt #para representar los grafos        
 
-import heapq #utilizamos una priority queue
-import pandas as pdb #hay que instalar pandas y openpyxl
+Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= 0,  index_col=0)
+Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
+Tran = pd.read_excel('Datos/datos.xlsx', 'TRANSBORDOS',header= 0,  index_col=0)
+Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
 
-class Parada:
-    def __init__(self, estado,index=0, acumulado=0, padre=None,  heuristica=0):
-        self.estado = estado #comrpobar si esta en la pila de abiertos o cerrados
-        self.index = index #index en las matrices para las distancias
-        self.acumulado = acumulado #distancia desde el inicio a este nodo
-        self.padre = padre #parada de la que viene
-        self.heuristica = heuristica #distancia desde el nodo hasta el puesto como final
+G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
+nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
 
-def ft_buscar(array, estacion):
-    i = 0
-    for elemento in array:
-        if elemento == estacion:
-            return i
-        else:
-            i = i + 1
-    return None
+#------------FALTA-------------
+#retraso por horas puntas
+#¿coste transbordos?
+#¿opcion elegir con menos transbordos?
 
-Datos = pdb.ExcelFile('Datos/datos.xlsx')
+nodosAbiertos = []
+nodosCerrados = []
+path = []
+pathWeight = []
+Hora = None
+inicial = None
+final = None
 
-# Heurist = [[ciu1, distciud2, distciud3, distciud4],     #vamos a declarar una matriz con la heuristica
-#                  [distciu1, ciud2, distciud3, distciud4]]
+def caminoMasCorto():
+    global inicial
+    global final
+    nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
+    caminoMasCortoRec(inicial)#lo mando de forma recursiva
+    path.append(final)
+    checkPath(final)
+    pathWeight.append(G.nodes[inicial].get("Heuristica"))#que compruebe el path
+    print(path)
+    print(pathWeight, "total = " , sum(pathWeight))
 
-# Dist = [[ciu1, distciud2, distciud3, distciud4],       #vamos a hacer una matriz con las distancias entre lugares
-#                  [distciu1, ciud2, distciud3, distciud4]]
-Heur = Datos.parse('Hoja1')
-print(Heur)
+def caminoMasCortoRec(inicial):
+    global nodosAbiertos
+    for actual in nx.neighbors(G, inicial):
 
-print(ft_buscar(Heur.get('madrid'), 0))
-# def Heuristica(inicio, final):
-#     return Heurist[inicio.index, final.index]
-# def Distancia(inicio, final):
-#     return Dist[inicio.index, final.index]
+        if actual not in nodosCerrados:
+            if actual not in nodosAbiertos:
+                nodosAbiertos.append(actual)
 
+        costeActual = G.nodes[inicial].get("Coste") + G.edges[inicial,actual].get("weight")
 
-
-
-
-
-
-# class Nodo:
-#     def __init__(self, state, parent=None, action=None, cost=0, heuristic=0):
-#         self.state = state  #Abierto/cerrado
-#         self.parent = parent  #padre
-#         self.action = action  #Acción que llevó a este estado desde el padre
-#         self.cost = cost  #Costo desde inicio
-#         self.heuristic = heuristic  #h(n)
-
-#     def total_cost(self):
-#         return self.cost + self.heuristic
-
-
-# def astar(initial_state, goal_state):
-#     open_list = []  #Nodos abiertos
-#     closed_set = set()  #Nodos cerrados
-
+        if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
+                                                             #lo comparo por si ya tiene un camiino mas rapido                    
+            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual), "Heuristica": CheckHeur(actual), "Padre": inicial}})    #cambio los atributos si es necesario     
+        nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
+        
+    if len(nodosAbiertos) >0:       
+        siguiente = nodosAbiertos.pop(0)
+        nodosCerrados.append(siguiente)
+        caminoMasCortoRec(siguiente)  
+            
     
-#     start_node = Nodo(state=initial_state, cost=0, heuristic=calculate_heuristic(initial_state, goal_state))
-#     heapq.heappush(open_list, (start_node.total_cost(), start_node))
+def CheckHeur(actual):
+    global final
+    return Heur.at[final,actual]                                                                       
 
-#     while open_list:
-#         _, current_node = heapq.heappop(open_list)
+def CheckHora(actual):
+    global Hora
+    return Hor.at[Hora,actual]  
 
-#         if current_node.state == goal_state:
-#             # Llegamos al objetivo, reconstruimos el camino
-#             path = []
-#             while current_node:
-#                 path.append((current_node.state, current_node.action))
-#                 current_node = current_node.parent
-#             path.reverse()
-#             return path
+def CheckTran(actual, final):
+    return Tran.at[final,actual]                                                                             
 
-#         closed_set.add(current_node.state)
+def checkPath(final):
+    Padre = G.nodes[final].get("Padre")
+    Peso = G.nodes[final].get("Coste") + G.nodes[final].get("Heuristica") 
+    if  Padre != final:
+        path.append(Padre)
+        pathWeight.append(Peso)
+        checkPath(Padre)
+    
+def Main():
+    global Hora
+    global inicial
+    global final
+    inicial = input(f"Escriba la parada de inicio: \n")
+    while inicial not in G.nodes:
+        inicial = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")
+        
+    final = input(f"Perfecto,comenzando desde {inicial}. Escriba la parada de destino\n")
+    while final not in G.nodes:
+        final = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")  
+    while True:
+        Hora = input(f"A que hora desea ir desde {inicial} a {final}, Escriba la hora con el formato HH:MM de 24 horas\n")
+        if len(Hora.split(":")) == 2:
+            horas, minutos = Hora.split(":")
+            if horas.isdigit() and minutos.isdigit():
+                horas = int(horas)
+                minutos = int(minutos)
+                if 5 <= horas <= 23 and 0 <= minutos <= 59:
+                    break  
+                else:
+                    if horas <=4 and 0 <= minutos <= 59:
+                        print("El metro permanece cerrado desde las 00:00 hasta las 05:00, selecciona otra hora por favor.")
+                    else:
+                        print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
+            else:
+                print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
+        else:
+            print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
 
-#         # Generamos los sucesores y los agregamos a la lista de nodos abiertos
-#         for successor_state, action, step_cost in generate_successors(current_node.state):
-#             if successor_state not in closed_set:
-#                 successor_cost = current_node.cost + step_cost
-#                 successor_node = Nodo(
-#                     state=successor_state,
-#                     parent=current_node,
-#                     action=action,
-#                     cost=successor_cost,
-#                     heuristic=calculate_heuristic(successor_state, goal_state)
-#                 )
-#                 heapq.heappush(open_list, (successor_node.total_cost(), successor_node))
+    Hora = horas
+    Opcion = input(f"¿Quiere que la ruta tenga los menos transbordos posibles o que sea la mas rápida? teclee [Transbordos/Rapida]\n")
+    
+    while Opcion[0] != "T" and Opcion[0] != "t" and Opcion[0] != "r" and Opcion[0] != "R":
+        Opcion = input(f"Por favor introduzcala con el formato 'Tansbordos'/ 'Rapida' / 'T' / 'R' / 't' / 'r' \n")
+    if Opcion[0] == "T" or Opcion[0] == "t":
+        Opcion = True
+    else:
+        Opcion = False
+    caminoMasCorto()
+        
+Main()
+             
+            
 
-#     # Si no se encuentra un camino, retornamos None
-#     return None
 
-# # Función para calcular la heurística (puede ser personalizada)
-# def calculate_heuristic(state, goal_state):
-#     # En este ejemplo, utilizamos una heurística nula
-#     return 0
-
-# # Función para generar sucesores (debe ser personalizada para el problema específico)
-# def generate_successors(state):
-#     # Aquí debes generar los sucesores a partir del estado actual y definir las acciones y costos
-#     pass
-
-# # Ejemplo de uso
-# initial_state = (0, 0)
-# goal_state = (4, 4)
-# path = astar(initial_state, goal_state)
-
-# if path:
-#     print("Camino encontrado:")
-#     for state, action in path:
-#         print(f"Estado: {state}, Acción: {action}")
-# else:
-#     print("No se encontró un camino hacia el objetivo.")
-
+ #----COMPROBACIONES GRAFO Y PLOT-----
+print(G)
+# print([a for a in G.edges(data=True)])
+pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
+colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
+nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
+nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
+plt.show()
