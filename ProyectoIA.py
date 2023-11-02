@@ -19,39 +19,48 @@ nodosAbiertos = []
 nodosCerrados = []
 path = []
 pathWeight = []
+Hora = None
+inicial = None
+final = None
 
-
-def caminoMasCorto(inicial, final):
-    nx.set_node_attributes(G, {inicial: {"Coste": 0, "Heuristica": CheckHeur(inicial,final), "Padre" : inicial}})                        #añado al primero su heuristica
-    caminoMasCortoRec(inicial, final)#lo mando de forma recursiva
+def caminoMasCorto():
+    global inicial
+    global final
+    nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
+    caminoMasCortoRec(inicial)#lo mando de forma recursiva
     path.append(final)
     checkPath(final)
     pathWeight.append(G.nodes[inicial].get("Heuristica"))#que compruebe el path
     print(path)
     print(pathWeight, "total = " , sum(pathWeight))
 
-def caminoMasCortoRec(inicial, final):
+def caminoMasCortoRec(inicial):
     global nodosAbiertos
     for actual in nx.neighbors(G, inicial):
+
         if actual not in nodosCerrados:
             if actual not in nodosAbiertos:
                 nodosAbiertos.append(actual)
+
         costeActual = G.nodes[inicial].get("Coste") + G.edges[inicial,actual].get("weight")
-        # print(actual,costeActual)
-        if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual:                                         #lo comparo por si ya tiene un camiino mas rapido                    
-            nx.set_node_attributes(G, {actual: {"Coste": costeActual, "Heuristica": CheckHeur(actual, final), "Padre": inicial}})    #cambio los atributos si es necesario     
+
+        if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
+                                                             #lo comparo por si ya tiene un camiino mas rapido                    
+            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual), "Heuristica": CheckHeur(actual), "Padre": inicial}})    #cambio los atributos si es necesario     
         nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
         
     if len(nodosAbiertos) >0:       
         siguiente = nodosAbiertos.pop(0)
         nodosCerrados.append(siguiente)
-        caminoMasCortoRec(siguiente, final)  
+        caminoMasCortoRec(siguiente)  
             
     
-def CheckHeur(actual, final):
+def CheckHeur(actual):
+    global final
     return Heur.at[final,actual]                                                                       
 
-def CheckHora(Hora, actual):
+def CheckHora(actual):
+    global Hora
     return Hor.at[Hora,actual]  
 
 def CheckTran(actual, final):
@@ -66,15 +75,18 @@ def checkPath(final):
         checkPath(Padre)
     
 def Main():
-    ciudad1 = input(f"Escriba la parada de inicio: \n")
-    while ciudad1 not in G.nodes:
-        ciudad1 = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")
+    global Hora
+    global inicial
+    global final
+    inicial = input(f"Escriba la parada de inicio: \n")
+    while inicial not in G.nodes:
+        inicial = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")
         
-    ciudad2 = input(f"Perfecto,comenzando desde {ciudad1}. Escriba la parada de destino\n")
-    while ciudad2 not in G.nodes:
-        ciudad2 = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")  
+    final = input(f"Perfecto,comenzando desde {inicial}. Escriba la parada de destino\n")
+    while final not in G.nodes:
+        final = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")  
     while True:
-        Hora = input(f"A que hora desea ir desde {ciudad1} a {ciudad2}, Escriba la hora con el formato 13:25\n")
+        Hora = input(f"A que hora desea ir desde {inicial} a {final}, Escriba la hora con el formato 13:25\n")
         if len(Hora.split(":")) == 2:
             horas, minutos = Hora.split(":")
             if horas.isdigit() and minutos.isdigit():
@@ -84,7 +96,7 @@ def Main():
                     break  
         print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
 
-    Hora = (horas, minutos)
+    Hora = horas
     Opcion = input(f"¿Quiere que la ruta tenga los menos transbordos posibles o que sea la mas rápida? teclee [Transbordos/Rapida]\n")
     
     while Opcion[0] != "T" and Opcion[0] != "t" and Opcion[0] != "r" and Opcion[0] != "R":
@@ -93,7 +105,7 @@ def Main():
         Opcion = True
     else:
         Opcion = False
-    caminoMasCorto(ciudad1,ciudad2)
+    caminoMasCorto()
         
 Main()
              
