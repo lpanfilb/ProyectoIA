@@ -11,13 +11,13 @@ G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo 
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
 
 #------------FALTA-------------
+#retraso por horas puntas
 #¿coste transbordos?
 #¿opcion elegir con menos transbordos?
 
 nodosAbiertos = []
 nodosCerrados = []
 path = []
-path2 = []
 pathWeight = []
 Hora = None
 inicial = None
@@ -29,26 +29,26 @@ def caminoMasCorto():
     nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
     caminoMasCortoRec(inicial)#lo mando de forma recursiva
     path.append(final)
-    path2.append(final)
     checkPath(final)
     pathWeight.append(G.nodes[inicial].get("Heuristica"))#que compruebe el path
-    print(path2)
+    print(path)
     print(pathWeight, "total = " , sum(pathWeight))
 
-def caminoMasCortoRec(nuevo):
+def caminoMasCortoRec(inicial):
     global nodosAbiertos
-    for actual in nx.neighbors(G, nuevo):
+    for actual in nx.neighbors(G, inicial):
 
         if actual not in nodosCerrados:
             if actual not in nodosAbiertos:
                 nodosAbiertos.append(actual)
 
-        costeActual = G.nodes[nuevo].get("Coste") + G.edges[nuevo,actual].get("weight")
+        costeActual = G.nodes[inicial].get("Coste") + G.edges[inicial,actual].get("weight")
 
         if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
-                                                                                 
-            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual) + CheckTran(nuevo, actual), "Heuristica": CheckHeur(actual), "Padre": nuevo}})    #cambio los atributos si es necesario     
+                                                             #lo comparo por si ya tiene un camiino mas rapido                    
+            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual), "Heuristica": CheckHeur(actual), "Padre": inicial}})    #cambio los atributos si es necesario     
         nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
+        
     if len(nodosAbiertos) >0:       
         siguiente = nodosAbiertos.pop(0)
         nodosCerrados.append(siguiente)
@@ -68,14 +68,9 @@ def CheckTran(actual, final):
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
-    Peso = G.nodes[final].get("Coste") + CheckTran(final, Padre) + G.nodes[final].get("Heuristica") 
+    Peso = G.nodes[final].get("Coste") + G.nodes[final].get("Heuristica") 
     if  Padre != final:
-        if CheckTran(final,Padre) == 0:
-            Padre2 = Padre 
-        else:
-            Padre2 = "Transbordo a " + Padre 
         path.append(Padre)
-        path2.append(Padre2)
         pathWeight.append(Peso)
         checkPath(Padre)
     
@@ -118,7 +113,6 @@ def Main():
         Opcion = True
     else:
         Opcion = False
-        
     caminoMasCorto()
         
 Main()
