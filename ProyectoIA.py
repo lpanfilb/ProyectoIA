@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt #para representar los grafos
 
 Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= 0,  index_col=0)
 Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
+Tran = pd.read_excel('Datos/datos.xlsx', 'TRANSBORDOS',header= 0,  index_col=0)
+Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
 
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
@@ -47,8 +49,13 @@ def caminoMasCortoRec(inicial, final):
             
     
 def CheckHeur(actual, final):
-    return Heur.at[final,actual]                                                                        #que recorra el siguiente nodo
-                                                                                 
+    return Heur.at[final,actual]                                                                       
+
+def CheckHora(Hora, actual):
+    return Hor.at[Hora,actual]  
+
+def CheckTran(actual, final):
+    return Tran.at[final,actual]                                                                             
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
