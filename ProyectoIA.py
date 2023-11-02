@@ -94,8 +94,10 @@ Main()
 
 
  #----COMPROBACIONES GRAFO-----
-# print(G)
-# # print([a for a in G.edges(data=True)])
-# pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
-# nx.draw(G, pos, with_labels=True, node_size=500, node_color='skyblue', font_size=10)
-# plt.show()
+print(G)
+# print([a for a in G.edges(data=True)])
+pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
+colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
+nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
+nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
+plt.show()
