@@ -117,17 +117,50 @@ def Main():
         Opcion = False
         
     caminoMasCorto()
+
+
         
 Main()
              
-            
+
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# Supongamos que ya tienes un grafo existente 'G'
+
+# Crear un grafo dirigido 'G_dirigido' a partir de un camino en 'G'
+G_dirigido = nx.DiGraph()
 
 
- #----COMPROBACIONES GRAFO Y PLOT-----
-print(G)
-# print([a for a in G.edges(data=True)])
-pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
-colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
-nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
-nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
+for i in range(len(path) - 1):
+    G_dirigido.add_edge(path[i], path[i + 1])
+
+# Crear una figura con dos subgráficos
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+# Calcular un diseño de posiciones (layout) para ambos grafos basado en el grafo original 'G'
+pos = nx.spring_layout(G)
+
+# Dibujar el grafo original 'G' en el primer subgráfico
+nx.draw(G, pos=pos, with_labels=True, node_size=500, node_color="lightblue", ax=ax1)
+ax1.set_title("Mapa Completo")
+
+# Dibujar el grafo dirigido 'G_dirigido' en el segundo subgráfico con las mismas posiciones
+nx.draw(G_dirigido, pos=pos, with_labels=True, node_size=500, node_color="lightblue", ax=ax2)
+ax2.set_title("Camino mas rápido")
+
+# Mostrar la figura
 plt.show()
+
+           
+
+
+
+# #  #----COMPROBACIONES GRAFO Y PLOT-----
+# print(G)
+# # print([a for a in G.edges(data=True)])
+# pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
+# colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
+# nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
+# nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
+# plt.show()
