@@ -10,14 +10,11 @@ Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
 
-#------------FALTA-------------
-#retraso por horas puntas
-#¿coste transbordos?
-#¿opcion elegir con menos transbordos?
 
 nodosAbiertos = []
 nodosCerrados = []
 path = []
+path2 = []
 pathWeight = []
 Hora = None
 inicial = None
@@ -29,26 +26,26 @@ def caminoMasCorto():
     nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
     caminoMasCortoRec(inicial)#lo mando de forma recursiva
     path.append(final)
+    path2.append(final)
     checkPath(final)
-    pathWeight.append(G.nodes[inicial].get("Heuristica"))#que compruebe el path
-    print(path)
+    pathWeight.append(G.nodes[inicial].get("Heuristica") + G.nodes[inicial].get("Coste"))#que compruebe el path
+    print(path2)
     print(pathWeight, "total = " , sum(pathWeight))
 
-def caminoMasCortoRec(inicial):
+def caminoMasCortoRec(nuevo):
     global nodosAbiertos
-    for actual in nx.neighbors(G, inicial):
+    for actual in nx.neighbors(G, nuevo):
 
         if actual not in nodosCerrados:
             if actual not in nodosAbiertos:
                 nodosAbiertos.append(actual)
 
-        costeActual = G.nodes[inicial].get("Coste") + G.edges[inicial,actual].get("weight")
+        costeActual = G.nodes[nuevo].get("Coste") + G.edges[nuevo,actual].get("weight")
 
         if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
-                                                             #lo comparo por si ya tiene un camiino mas rapido                    
-            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual), "Heuristica": CheckHeur(actual), "Padre": inicial}})    #cambio los atributos si es necesario     
+                                                                                 
+            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual) + CheckTran(nuevo, actual), "Heuristica": CheckHeur(actual), "Padre": nuevo}})    #cambio los atributos si es necesario     
         nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
-        
     if len(nodosAbiertos) >0:       
         siguiente = nodosAbiertos.pop(0)
         nodosCerrados.append(siguiente)
@@ -68,9 +65,14 @@ def CheckTran(actual, final):
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
-    Peso = G.nodes[final].get("Coste") + G.nodes[final].get("Heuristica") 
+    Peso = G.nodes[final].get("Coste") + CheckTran(final, Padre) + G.nodes[final].get("Heuristica") 
     if  Padre != final:
+        if CheckTran(final,Padre) == 0:
+            Padre2 = Padre 
+        else:
+            Padre2 = "Transbordo a " + Padre 
         path.append(Padre)
+        path2.append(Padre2)
         pathWeight.append(Peso)
         checkPath(Padre)
     
@@ -113,18 +115,52 @@ def Main():
         Opcion = True
     else:
         Opcion = False
+        
     caminoMasCorto()
+
+
         
 Main()
              
-            
+
+import networkx as nx
+import matplotlib.pyplot as plt
+
+# Supongamos que ya tienes un grafo existente 'G'
+
+# Crear un grafo dirigido 'G_dirigido' a partir de un camino en 'G'
+G_dirigido = nx.DiGraph()
 
 
- #----COMPROBACIONES GRAFO Y PLOT-----
-print(G)
-# print([a for a in G.edges(data=True)])
-pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
-colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
-nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
-nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
+for i in range(len(path) - 1):
+    G_dirigido.add_edge(path[i], path[i + 1])
+
+# Crear una figura con dos subgráficos
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+# Calcular un diseño de posiciones (layout) para ambos grafos basado en el grafo original 'G'
+pos = nx.spring_layout(G)
+
+# Dibujar el grafo original 'G' en el primer subgráfico
+nx.draw(G, pos=pos, with_labels=True, node_size=500, node_color="lightblue", ax=ax1)
+ax1.set_title("Mapa Completo")
+
+# Dibujar el grafo dirigido 'G_dirigido' en el segundo subgráfico con las mismas posiciones
+nx.draw(G_dirigido, pos=pos, with_labels=True, node_size=500, node_color="lightblue", ax=ax2)
+ax2.set_title("Camino mas rápido")
+
+# Mostrar la figura
 plt.show()
+
+           
+
+
+
+# #  #----COMPROBACIONES GRAFO Y PLOT-----
+# print(G)
+# # print([a for a in G.edges(data=True)])
+# pos = nx.circular_layout(G)  # Layout del grafo (puedes ajustarlo según tus preferencias)
+# colores_n = ['lime' if nodo in path else 'thistle' for nodo in G]
+# nx.draw(G, pos, with_labels = True, node_size = 500, node_color= colores_n, node_shape = "s", edge_color = 'thistle', width = 2, font_size = 10)
+# nx.draw(G, pos, node_size = 0, edgelist = list(zip(path,path[1:])), edge_color = 'lime', width = 4, font_size = 10)
+# plt.show()
