@@ -23,7 +23,7 @@ final = None
 def caminoMasCorto():
     global inicial
     global final
-    nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
+    nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial) + CheckTran(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
     caminoMasCortoRec(inicial)#lo mando de forma recursiva
     path.append(final)
     path2.append(final)
@@ -44,7 +44,7 @@ def caminoMasCortoRec(nuevo):
 
         if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
                                                                                  
-            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual) + CheckTran(nuevo, actual), "Heuristica": CheckHeur(actual), "Padre": nuevo}})    #cambio los atributos si es necesario     
+            nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual) + CheckTran(actual), "Heuristica": CheckHeur(actual), "Padre": nuevo}})    #cambio los atributos si es necesario     
         nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
     if len(nodosAbiertos) >0:       
         siguiente = nodosAbiertos.pop(0)
@@ -60,14 +60,14 @@ def CheckHora(actual):
     global Hora
     return Hor.at[Hora,actual]  
 
-def CheckTran(actual, final):
-    return Tran.at[final,actual]                                                                             
+def CheckTran(actual):
+    return Tran.at[actual, actual]                                                                             
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
-    Peso = G.nodes[final].get("Coste") + CheckTran(final, Padre) + G.nodes[final].get("Heuristica") 
+    Peso = G.nodes[final].get("Coste") + CheckTran(final) + G.nodes[final].get("Heuristica") 
     if  Padre != final:
-        if CheckTran(final,Padre) == 0:
+        if CheckTran(Padre) == 0:
             Padre2 = Padre 
         else:
             Padre2 = "Transbordo a " + Padre 
@@ -148,6 +148,15 @@ ax1.set_title("Mapa Completo")
 # Dibujar el grafo dirigido 'G_dirigido' en el segundo subgráfico con las mismas posiciones
 nx.draw(G_dirigido, pos=pos, with_labels=True, node_size=500, node_color="lightblue", ax=ax2)
 ax2.set_title("Camino mas rápido")
+
+for nodo in G_dirigido.nodes:
+    if CheckTran(nodo) != 0:
+        nx.draw_networkx_nodes(G_dirigido, pos, nodelist=[nodo], node_color="red", node_size=500)
+
+legend_labels = {"Nodos": "Transbordos", "Aristas": "Aristas", "Transbordos": "Transbordos"}
+legend_lines = [plt.Line2D([0], [0], marker='o', color='w', markersize=20, markerfacecolor='lightblue'), plt.Line2D([0], [0],color='black',lw=2), plt.Line2D([0], [0], marker='o', color='w', markersize=20, markerfacecolor='red')]
+ax2.legend(legend_lines, legend_labels.values(), loc='upper right')
+
 
 # Mostrar la figura
 plt.show()
