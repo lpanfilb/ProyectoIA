@@ -1,4 +1,5 @@
 import math
+import folium
 import networkx as nx #tratamiento de grafos
 import pandas as pd #hay que instalar pandas y openpyxl
 import matplotlib.pyplot as plt #para representar los grafos        
@@ -10,6 +11,31 @@ Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
 
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
+
+
+#-----------------------------------------------PRUEBAS--------------------------------------------
+
+df = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= None, index_col=0)  # No usar la primera fila como encabezado
+
+# Transponer el DataFrame para que las columnas representen nodos, X, Y
+df = df.T
+
+
+
+# Convertir las columnas X e Y a números
+df['X'] = pd.to_numeric(df['X'], errors='coerce')
+df['Y'] = pd.to_numeric(df['Y'], errors='coerce')
+
+# Crear un mapa centrado en las coordenadas iniciales
+mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=12)
+
+# Agregar marcadores al mapa
+for index, row in df.iterrows():
+    folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(mapa)
+
+# Guardar el mapa como un archivo HTML
+mapa.save('mapa_con_puntos.html')
+#-----------------------------------------------PRUEBAS--------------------------------------------
 
 
 nodosAbiertos = []
@@ -169,7 +195,21 @@ ax2.legend(legend_lines, legend_labels.values(), loc='upper right')
 # Mostrar la figura
 plt.show()
 
-           
+# # Crear un mapa centrado en las coordenadas iniciales
+# mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=12)
+
+# # Agregar marcadores al mapa
+# for index, row in df.iterrows():
+#     folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(mapa)
+
+# # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
+# for edge in G_dirigido.edges():
+#     start_coords = df.loc[df['Nombre'] == edge[0], ['X', 'Y']].values.flatten().tolist()
+#     end_coords = df.loc[df['Nombre'] == edge[1], ['X', 'Y']].values.flatten().tolist()
+#     polyline = folium.PolyLine([start_coords, end_coords], color="blue", weight=2.5, opacity=1).add_to(mapa)
+
+# # Guardar el mapa como un archivo HTML
+# mapa.save('mapa_con_grafo_dirigido.html')     
 
 
 
