@@ -1,14 +1,41 @@
+import math
+import folium
 import networkx as nx #tratamiento de grafos
 import pandas as pd #hay que instalar pandas y openpyxl
 import matplotlib.pyplot as plt #para representar los grafos        
 
-Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= 0,  index_col=0)
+Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= 0, index_col=0)
 Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
 Tran = pd.read_excel('Datos/datos.xlsx', 'TRANSBORDOS',header= 0,  index_col=0)
 Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
 
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
+
+
+#-----------------------------------------------PRUEBAS--------------------------------------------
+
+df = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= None, index_col=0)  # No usar la primera fila como encabezado
+
+# Transponer el DataFrame para que las columnas representen nodos, X, Y
+df = df.T
+
+
+
+# Convertir las columnas X e Y a números
+df['X'] = pd.to_numeric(df['X'], errors='coerce')
+df['Y'] = pd.to_numeric(df['Y'], errors='coerce')
+
+# Crear un mapa centrado en las coordenadas iniciales
+mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=12)
+
+# Agregar marcadores al mapa
+for index, row in df.iterrows():
+    folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(mapa)
+
+# Guardar el mapa como un archivo HTML
+mapa.save('mapa_con_puntos.html')
+#-----------------------------------------------PRUEBAS--------------------------------------------
 
 
 nodosAbiertos = []
@@ -53,15 +80,30 @@ def caminoMasCortoRec(nuevo):
             
     
 def CheckHeur(actual):
-    global final
-    return Heur.at[final,actual]                                                                       
+    global final                                                                   
+    radio_tierra = 6371.0
 
+    lat1 = math.radians(Heur[actual]['X'])
+    lon1 = math.radians(Heur[actual]['Y'])
+    
+    lat2 = math.radians(Heur[final]['X'])
+    lon2 = math.radians(Heur[final]['Y'])
+    
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distancia = radio_tierra * c
+    return round((distancia+1000)/7,917) 
+    
 def CheckHora(actual):
     global Hora
-    return Hor.at[Hora,actual]  
+    return round(Hor.at[Hora,actual])  
 
 def CheckTran(actual):
-    return Tran.at[actual, actual]                                                                             
+    return round(Tran.at[actual, actual])                                                                             
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
@@ -107,14 +149,6 @@ def Main():
             print("Hora no válida. Asegúrate de introducir la hora en formato HH:MM y que los valores sean correctos.")
 
     Hora = horas
-    Opcion = input(f"¿Quiere que la ruta tenga los menos transbordos posibles o que sea la mas rápida? teclee [Transbordos/Rapida]\n")
-    
-    while Opcion[0] != "T" and Opcion[0] != "t" and Opcion[0] != "r" and Opcion[0] != "R":
-        Opcion = input(f"Por favor introduzcala con el formato 'Tansbordos'/ 'Rapida' / 'T' / 'R' / 't' / 'r' \n")
-    if Opcion[0] == "T" or Opcion[0] == "t":
-        Opcion = True
-    else:
-        Opcion = False
         
     caminoMasCorto()
 
@@ -161,7 +195,21 @@ ax2.legend(legend_lines, legend_labels.values(), loc='upper right')
 # Mostrar la figura
 plt.show()
 
-           
+# # Crear un mapa centrado en las coordenadas iniciales
+# mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=12)
+
+# # Agregar marcadores al mapa
+# for index, row in df.iterrows():
+#     folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(mapa)
+
+# # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
+# for edge in G_dirigido.edges():
+#     start_coords = df.loc[df['Nombre'] == edge[0], ['X', 'Y']].values.flatten().tolist()
+#     end_coords = df.loc[df['Nombre'] == edge[1], ['X', 'Y']].values.flatten().tolist()
+#     polyline = folium.PolyLine([start_coords, end_coords], color="blue", weight=2.5, opacity=1).add_to(mapa)
+
+# # Guardar el mapa como un archivo HTML
+# mapa.save('mapa_con_grafo_dirigido.html')     
 
 
 
