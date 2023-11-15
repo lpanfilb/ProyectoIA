@@ -1,5 +1,6 @@
 import math
 import folium
+from folium import plugins 
 import networkx as nx #tratamiento de grafos
 import pandas as pd #hay que instalar pandas y openpyxl
 import matplotlib.pyplot as plt #para representar los grafos        
@@ -8,6 +9,7 @@ Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA',header= 0, index_col=0)
 Dist = pd.read_excel('Datos/datos.xlsx', 'DISTANCIAS', index_col=0)
 Tran = pd.read_excel('Datos/datos.xlsx', 'TRANSBORDOS',header= 0,  index_col=0)
 Hor = pd.read_excel('Datos/datos.xlsx', 'HORAS',header= 0,  index_col=0)
+Col = pd.read_excel('Datos/datos.xlsx', 'LINEAS', index_col=0)
 
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph()) #Creacion del grafo de distancias
 nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0 , "Padre" : ""})
@@ -26,15 +28,7 @@ df = df.T
 df['X'] = pd.to_numeric(df['X'], errors='coerce')
 df['Y'] = pd.to_numeric(df['Y'], errors='coerce')
 
-# Crear un mapa centrado en las coordenadas iniciales
-mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=12)
 
-# Agregar marcadores al mapa
-for index, row in df.iterrows():
-    folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(mapa)
-
-# Guardar el mapa como un archivo HTML
-mapa.save('mapa_con_puntos.html')
 #-----------------------------------------------PRUEBAS--------------------------------------------
 
 
@@ -72,7 +66,7 @@ def caminoMasCortoRec(nuevo):
         if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
                                                                                  
             nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual) + CheckTran(actual), "Heuristica": CheckHeur(actual), "Padre": nuevo}})    #cambio los atributos si es necesario     
-        print(nodosAbiertos)
+        
         nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
     if len(nodosAbiertos) >0:       
         siguiente = nodosAbiertos.pop(0)
@@ -104,7 +98,10 @@ def CheckHora(actual):
     return Hor.at[Hora,actual]  
 
 def CheckTran(actual):
-    return Tran.at[actual, actual]                                                                           
+    return Tran.at[actual, actual] 
+
+def CheckColor(actual,final):
+    return Col.at[actual, final]                                                                      
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
@@ -158,8 +155,6 @@ def Main():
 Main()
              
 
-import networkx as nx
-import matplotlib.pyplot as plt
 
 # Supongamos que ya tienes un grafo existente 'G'
 
@@ -196,21 +191,65 @@ ax2.legend(legend_lines, legend_labels.values(), loc='upper right')
 # Mostrar la figura
 plt.show()
 
-# # Crear un mapa centrado en las coordenadas iniciales
-# mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=12)
+#---------------------------------------MAPA-----------------------------------------------
 
-# # Agregar marcadores al mapa
-# for index, row in df.iterrows():
-#     folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(mapa)
+# Crear un mapa centrado en las coordenadas iniciales
+mapa = folium.Map(location=[df['X'].mean(), df['Y'].mean()], zoom_start=13)
+TotalLineas = folium.FeatureGroup(name="Metro Lyon", show=False).add_to(mapa)
+Recorrido = folium.FeatureGroup(name="Ruta Recomendada", show=True).add_to(mapa)
+    
 
-# # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
-# for edge in G_dirigido.edges():
-#     start_coords = df.loc[df['Nombre'] == edge[0], ['X', 'Y']].values.flatten().tolist()
-#     end_coords = df.loc[df['Nombre'] == edge[1], ['X', 'Y']].values.flatten().tolist()
-#     polyline = folium.PolyLine([start_coords, end_coords], color="blue", weight=2.5, opacity=1).add_to(mapa)
+def add_arrow(Recorrido, start_coords, end_coords, color='blue'):
+    # Agregar la línea
+    folium.PolyLine([start_coords, end_coords], color=color, weight=3.5, opacity=1).add_to(Recorrido)
 
-# # Guardar el mapa como un archivo HTML
-# mapa.save('mapa_con_grafo_dirigido.html')     
+    # Calcular el ángulo de la flecha
+    arrow_angle = round(calculate_bearing(start_coords, end_coords), 2)
+    
+    arrow_middle = [0.5 * (start_coords[0] + end_coords[0]), 0.5 * (start_coords[1] + end_coords[1])]
+    arrow_heading = plugins.BeautifyIcon(icon='arrow-down', icon_shape='circle', border_color=color, text_color=color, inner_icon_style='transform: rotate({0}deg);'.format(arrow_angle))
+
+    # Agregar la "flecha"
+    folium.Marker(location=arrow_middle, icon=arrow_heading).add_to(Recorrido)
+    
+def calculate_bearing(start_coords, end_coords):
+    start_lat, start_lon = start_coords
+    end_lat, end_lon = end_coords
+
+    delta_lon = end_lon - start_lon
+    delta_lat = end_lat - start_lat
+
+    bearing = math.atan2(delta_lon, delta_lat)
+    bearing = math.degrees(bearing)
+    bearing = (bearing + 360) % 360
+
+    return bearing
+# Agregar marcadores al mapa
+for index, row in df.iterrows():
+    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='train-subway'), popup=row['Coordenadas']).add_to(TotalLineas)
+    
+for edge in G.edges():
+    start_coords = df.loc[df['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
+    end_coords = df.loc[df['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
+    polyline = folium.PolyLine([start_coords, end_coords], color=CheckColor(edge[0], edge[1]), weight=3.5, opacity=1).add_to(TotalLineas)
+    
+
+# Agregar polilíneas al mapa para representar las aristas del grafo dirigido
+for index, row in df.iterrows():
+    if row['Coordenadas'] in path:
+        folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(Recorrido)
+        
+for edge in G_dirigido.edges():
+    start_coords = df.loc[df['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
+    end_coords = df.loc[df['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
+   # Agregar la línea con "flecha"
+    add_arrow(Recorrido, start_coords, end_coords, color=CheckColor(edge[0], edge[1]))
+
+
+
+folium.LayerControl().add_to(mapa)
+# Guardar el mapa como un archivo HTML
+mapa.save('mapa_con_grafo_dirigido.html')     
 
 
 
