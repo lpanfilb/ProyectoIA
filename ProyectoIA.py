@@ -72,6 +72,7 @@ def caminoMasCortoRec(nuevo):
         if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
                                                                                  
             nx.set_node_attributes(G, {actual: {"Coste": costeActual + CheckHora(actual) + CheckTran(actual), "Heuristica": CheckHeur(actual), "Padre": nuevo}})    #cambio los atributos si es necesario     
+        print(nodosAbiertos)
         nodosAbiertos = sorted(nodosAbiertos, key=lambda x: G.nodes[x]['Coste'])
     if len(nodosAbiertos) >0:       
         siguiente = nodosAbiertos.pop(0)
@@ -100,10 +101,10 @@ def CheckHeur(actual):
     
 def CheckHora(actual):
     global Hora
-    return round(Hor.at[Hora,actual])  
+    return Hor.at[Hora,actual]  
 
 def CheckTran(actual):
-    return round(Tran.at[actual, actual])                                                                             
+    return Tran.at[actual, actual]                                                                           
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
