@@ -117,9 +117,7 @@ def checkPath(final):
         checkPath(Padre)
     
 def Main():
-    global Hora
-    global inicial
-    global final
+    global Hora,inicial, final
     inicial = input(f"Escriba la parada de inicio: \n")
     while inicial not in G.nodes:
         inicial = input(f"Por favor repita la ciudad con el formato como en el ejemplo 'Madrid'\n")
@@ -226,7 +224,7 @@ def calculate_bearing(start_coords, end_coords):
     return bearing
 # Agregar marcadores al mapa
 for index, row in df.iterrows():
-    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='train-subway'), popup=row['Coordenadas']).add_to(TotalLineas)
+    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color='red', inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(TotalLineas)
     
 for edge in G.edges():
     start_coords = df.loc[df['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
@@ -237,7 +235,7 @@ for edge in G.edges():
 # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
 for index, row in df.iterrows():
     if row['Coordenadas'] in path:
-        folium.Marker(location=[row['X'], row['Y']], popup=row['Coordenadas']).add_to(Recorrido)
+        folium.Marker(location=[row['X'], row['Y']],icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
         
 for edge in G_dirigido.edges():
     start_coords = df.loc[df['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
