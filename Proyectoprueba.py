@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets #ipyleaflet
 from ipywidgets import  widgets
 from IPython.display import display
+
 import folium
 from folium import plugins
 
@@ -128,12 +129,23 @@ final = None
 # Función para actualizar el mapa cuando cambian los nodos de inicio y destino
 def update_map(start_node, end_node, hora, button):
     global inicial, final, Hora, path, nodosAbiertos, nodosCerrados
+    
+    if start_node == "Seleccione Inicio" or end_node == "Seleccione Destino" or not (5 <= hora.hour <= 23):
+        
+        calculate_button_err = widgets.Button(description="Recalcular Camino", button_style='danger', style={'button_width': 'initial'})
+        calculate_button_err.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
+        error_message = widgets.HTML("<p style='color:red;font-weight:bold;'>Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>")
+        horaBotonErr = widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err])
+        display(error_message)
+        display(InicioFinal,horaBotonErr)
+        return
+    
     path =[]
     nodosAbiertos = []
     nodosCerrados = []
     inicial = start_node
     final = end_node
-    Hora = hora
+    Hora = hora.hour
     caminoMasCorto()
     display_map()
     
@@ -141,30 +153,30 @@ def update_map(start_node, end_node, hora, button):
 
 # Widget de selección de nodos
 start_node_dropdown = widgets.Dropdown(
-    options=list(G.nodes),
-    value=list(G.nodes)[0],
+    options=["Seleccione Inicio"] + list(G.nodes),
+    value = "Seleccione Inicio",
     description='Nodo de inicio:',
     style={'description_width': 'initial'}
 )
 
 end_node_dropdown = widgets.Dropdown(
-    options=list(G.nodes),
-    value=list(G.nodes)[-1],
+    options=["Seleccione Destino"] + list(G.nodes),
+    value = "Seleccione Destino",
     description='Nodo de destino:',
     style={'description_width': 'initial'}
 )
+InicioFinal = widgets.HBox([start_node_dropdown, end_node_dropdown])
 
-hora_dropdown = widgets.Dropdown(
-    options=list(range(1, 24)),
-    value=1,
-    description='Horas:',
-    style={'description_width': 'initial'}
+hora_dropdown = widgets.TimePicker(
+    description='Hora',
+    disabled=False
 )
 
 # Botón para calcular el camino
 calculate_button = widgets.Button(description="Calcular Camino", button_style='success')
 calculate_button.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
 
+horaBoton = widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button])
 # Crear widget interactivo
 #interact(update_map, start_node=start_node_dropdown, end_node=end_node_dropdown, hora=hora_dropdown, button=fixed(calculate_button))
 
@@ -235,10 +247,10 @@ def display_map():
 
     if inicial is not None:
         display(mapa)
-        display(start_node_dropdown, end_node_dropdown, hora_dropdown, calculate_button)
+        display(InicioFinal, horaBoton)
     # Mostrar el mapa
 display(map)
-display(start_node_dropdown, end_node_dropdown, hora_dropdown, calculate_button)    
+display(InicioFinal, horaBoton)    
 # Mostrar el mapa inicial
 display_map()
 
