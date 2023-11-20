@@ -1,13 +1,15 @@
+
 #%%
+#Librerias necesarias para su ejecucion
+
+from datetime import datetime
 import math
 import networkx as nx
 import pandas as pd
-import matplotlib.pyplot as plt
 import ipywidgets as widgets #ipyleaflet
+import folium
 from ipywidgets import  widgets
 from IPython.display import display
-
-import folium
 from folium import plugins
 
 Heur = pd.read_excel('Datos/datos.xlsx', 'HEURISTICA', header=0, index_col=0)
@@ -20,20 +22,30 @@ Coords = Coords.T
 
 
 G = nx.from_pandas_adjacency(Dist, create_using=nx.Graph())  # Creacion del grafo de distancias
-nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0, "Padre": ""})
+H = G.copy()
+
+#----------Calculo camino mas corto-------------
+
+nodosAbiertos = []
+nodosCerrados = []
+path = []
+Hora = None
+inicial = None
+final = None
+
 
 def caminoMasCorto():
-    global inicial
-    global final
+    global inicial, final, G
+    G = H.__class__()
+    G.add_nodes_from(H)
+    G.add_edges_from(H.edges)  
+    nx.set_node_attributes(G, {"Coste": 0, "Heuristica": 0, "Padre": ""}) 
     nx.set_node_attributes(G, {inicial: {"Coste": CheckHora(inicial) + CheckTran(inicial), "Heuristica": CheckHeur(inicial), "Padre" : inicial}})                        #añado al primero su heuristica
     caminoMasCortoRec(inicial)#lo mando de forma recursiva
     path.append(final)
-    path2.append(final)
+    nodosCerrados.clear()
     checkPath(final)
-    pathWeight.append(G.nodes[inicial].get("Heuristica") + G.nodes[inicial].get("Coste"))#que compruebe el path
-    print(path2)
-    print(pathWeight, "total = " , sum(pathWeight))
-
+    
 def caminoMasCortoRec(nuevo):
     global nodosAbiertos
     for actual in nx.neighbors(G, nuevo):
@@ -42,7 +54,7 @@ def caminoMasCortoRec(nuevo):
             if actual not in nodosAbiertos:
                 nodosAbiertos.append(actual)
 
-        costeActual = G.nodes[nuevo].get("Coste") + G.edges[nuevo,actual].get("weight")
+        costeActual = (G.nodes[nuevo].get("Coste") or 0) + (G.edges[nuevo, actual].get("weight") or 0)
 
         if G.nodes[actual].get("Coste") is None or G.nodes[actual].get("Coste") > costeActual: 
                                                                                  
@@ -54,7 +66,6 @@ def caminoMasCortoRec(nuevo):
         nodosCerrados.append(siguiente)
         caminoMasCortoRec(siguiente)  
             
-    
 def CheckHeur(actual):
     global final                                                                   
     radio_tierra = 6371.0
@@ -86,63 +97,87 @@ def CheckColor(actual,final):
 
 def checkPath(final):
     Padre = G.nodes[final].get("Padre")
-    Peso = G.nodes[final].get("Coste") + CheckTran(final) + G.nodes[final].get("Heuristica") 
     if  Padre != final:
-        if CheckTran(Padre) == 0:
-            Padre2 = Padre 
-        else:
-            Padre2 = "Transbordo a " + Padre 
         path.append(Padre)
-        path2.append(Padre2)
-        pathWeight.append(Peso)
         checkPath(Padre)
-
-# # Crear un mapa centrado en las coordenadas iniciales
+        
+#----------Creacion Mapa------------
+# Crear un mapa centrado en las coordenadas iniciales
 map = folium.Map(location=[Coords['X'].mean(), Coords['Y'].mean()], zoom_start=13)
-    
-
+TotalLineas = folium.FeatureGroup(name="Metro Lyon").add_to(map)
 
 # Agregar marcadores al mapa
 for index, row in Coords.iterrows():
-    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color='red', inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(map)
-    
+    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color='red', inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(TotalLineas)
+# Agregar aristas al mapa completo 
 for edge in G.edges():
-    start_coords = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
-    end_coords = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
-    polyline = folium.PolyLine([start_coords, end_coords], color=CheckColor(edge[0], edge[1]), weight=3.5, opacity=1).add_to(map)
-    
-
-map.save('mapaMetro.html')     
+    coord_inicial = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
+    coord_final = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
+    polyline = folium.PolyLine([coord_inicial, coord_final], color=CheckColor(edge[0], edge[1]), weight=3.5, opacity=1).add_to(TotalLineas)     
 
 
-# ------------------------------------ MAPA INTERACTIVO ------------------------------------
+#%%
+
+# ------------------------------------Interfaz usuario------------------------------------
 
 nodosAbiertos = []
 nodosCerrados = []
 path = []
-path2 = []
-pathWeight = []
 Hora = None
 inicial = None
 final = None
 
+def interfaz(correcto):
+    # Desplegable nodo inicial
+    start_node_dropdown = widgets.Dropdown(
+        options=["Seleccione Inicio"] + list(G.nodes),
+        value = "Seleccione Inicio",
+        description='Nodo de inicio:',
+        style={'description_width': 'initial'}
+    )
+    #desplegable nodo final
+    end_node_dropdown = widgets.Dropdown(
+        options=["Seleccione Destino"] + list(G.nodes),
+        value = "Seleccione Destino",
+        description='Nodo de destino:',
+        style={'description_width': 'initial'}
+    )
+    
+    #selector hora
+    hora_dropdown = widgets.TimePicker(
+        description='Hora',
+        value = datetime.now().time(),
+        disabled=False,
+    )
+
+    # Botón para calcular el camino
+    calculate_button = widgets.Button(description="Calcular Camino", button_style='success')
+    calculate_button.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
+
+
+    calculate_button_err = widgets.Button(description="Recalcular Camino", button_style='danger', style={'button_width': 'initial'})
+    calculate_button_err.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
+    
+    # display(clear=True)
+    
+    if correcto:
+        display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
+                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
+    else: 
+        display(widgets.HTML("<p style='color:red;font-weight:bold;'>Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
+                widgets.HBox([start_node_dropdown, end_node_dropdown]),
+                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
+    
+    
+
 # Función para actualizar el mapa cuando cambian los nodos de inicio y destino
 def update_map(start_node, end_node, hora, button):
-    global inicial, final, Hora, path, nodosAbiertos, nodosCerrados
+    global inicial, final, Hora, path
     
     if start_node == "Seleccione Inicio" or end_node == "Seleccione Destino" or not (5 <= hora.hour <= 23):
-        
-        calculate_button_err = widgets.Button(description="Recalcular Camino", button_style='danger', style={'button_width': 'initial'})
-        calculate_button_err.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
-        error_message = widgets.HTML("<p style='color:red;font-weight:bold;'>Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>")
-        horaBotonErr = widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err])
-        display(error_message)
-        display(InicioFinal,horaBotonErr)
+        interfaz(False)
         return
-    
-    path =[]
-    nodosAbiertos = []
-    nodosCerrados = []
+    path.clear()
     inicial = start_node
     final = end_node
     Hora = hora.hour
@@ -151,107 +186,61 @@ def update_map(start_node, end_node, hora, button):
     
     
 
-# Widget de selección de nodos
-start_node_dropdown = widgets.Dropdown(
-    options=["Seleccione Inicio"] + list(G.nodes),
-    value = "Seleccione Inicio",
-    description='Nodo de inicio:',
-    style={'description_width': 'initial'}
-)
-
-end_node_dropdown = widgets.Dropdown(
-    options=["Seleccione Destino"] + list(G.nodes),
-    value = "Seleccione Destino",
-    description='Nodo de destino:',
-    style={'description_width': 'initial'}
-)
-InicioFinal = widgets.HBox([start_node_dropdown, end_node_dropdown])
-
-hora_dropdown = widgets.TimePicker(
-    description='Hora',
-    disabled=False
-)
-
-# Botón para calcular el camino
-calculate_button = widgets.Button(description="Calcular Camino", button_style='success')
-calculate_button.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
-
-horaBoton = widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button])
-# Crear widget interactivo
-#interact(update_map, start_node=start_node_dropdown, end_node=end_node_dropdown, hora=hora_dropdown, button=fixed(calculate_button))
 
 # Función para mostrar el mapa actualizado
 def display_map():
-    global index, polyline
-    # Limpiar capas antes de agregar nuevos elementos
+    global index, polyline, TotalLineas
+    setattr(TotalLineas, 'show', False)
    
     mapa = folium.Map(location=[Coords['X'].mean(), Coords['Y'].mean()], zoom_start=13)
-    TotalLineas = folium.FeatureGroup(name="Metro Lyon", show=False).add_to(mapa)
-    Recorrido = folium.FeatureGroup(name="Ruta Recomendada", show=True).add_to(mapa)
-
-    def add_arrow(Recorrido, start_coords, end_coords, color='blue'):
+    Recorrido = folium.FeatureGroup(name="Ruta Recomendada", show=True).add_to(map)
+    
+    
+    def add_arrow(Recorrido, coord_inicial, coord_final, color='blue'):
         # Agregar la línea
-        folium.PolyLine([start_coords, end_coords], color=color, weight=3.5, opacity=1).add_to(Recorrido)
-
+        folium.PolyLine([coord_inicial, coord_final], color=color, weight=3.5, opacity=1).add_to(Recorrido)
         # Calcular el ángulo de la flecha
-        arrow_angle = round(calculate_bearing(start_coords, end_coords), 2)
-        
-        arrow_middle = [0.5 * (start_coords[0] + end_coords[0]), 0.5 * (start_coords[1] + end_coords[1])]
+        arrow_angle = round(calcular_angulo(coord_inicial, coord_final), 2)
+        arrow_middle = [0.5 * (coord_inicial[0] + coord_final[0]), 0.5 * (coord_inicial[1] + coord_final[1])]
         arrow_heading = plugins.BeautifyIcon(icon='arrow-down', icon_shape='circle', border_color=color, text_color=color, inner_icon_style='transform: rotate({0}deg);'.format(arrow_angle))
-
         # Agregar la "flecha"
         folium.Marker(location=arrow_middle, icon=arrow_heading).add_to(Recorrido)
     
-    def calculate_bearing(start_coords, end_coords):
-        start_lat, start_lon = start_coords
-        end_lat, end_lon = end_coords
+    def calcular_angulo(coord_inicial, coord_final):
+        lat_inicial, long_inicial = coord_inicial
+        lat_final, long_final = coord_final
 
-        delta_lon = end_lon - start_lon
-        delta_lat = end_lat - start_lat
+        delta_lon = long_final - long_inicial
+        delta_lat = lat_final - lat_inicial
 
-        bearing = math.atan2(delta_lon, delta_lat)
-        bearing = math.degrees(bearing)
-        bearing = (bearing + 360) % 360
-
-        return bearing
-    # Agregar marcadores al mapa
-    for index, row in Coords.iterrows():
-        folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color='red', inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(TotalLineas)
-    
-    for edge in G.edges():
-        start_coords = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
-        end_coords = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
-        polyline = folium.PolyLine([start_coords, end_coords], color=CheckColor(edge[0], edge[1]), weight=3.5, opacity=1).add_to(TotalLineas)
+        angulo = math.atan2(delta_lon, delta_lat)
+        angulo = math.degrees(angulo)
+        angulo = (angulo + 360) % 360
+        return angulo
     
     G_dirigido = nx.DiGraph()
     for i in range(len(path) - 1):
-        G_dirigido.add_edge(path[i+1], path[i])
-
-# Agregar polilíneas al mapa para representar las aristas del grafo dirigido
+        G_dirigido.add_edge(path[i], path[i+1])
+    # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
     for index, row in Coords.iterrows():
         if row['Coordenadas'] in path:
             folium.Marker(location=[row['X'], row['Y']],icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
  
     for edge in G_dirigido.edges():
-        start_coords = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
-        end_coords = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
+        coord_inicial = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
+        coord_final = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
     # Agregar la línea con "flecha"
-        add_arrow(Recorrido, start_coords, end_coords, color=CheckColor(edge[0], edge[1]))
+        add_arrow(Recorrido, coord_inicial, coord_final, color=CheckColor(edge[0], edge[1]))
 
-    
-    # Agregar capas al mapa
     TotalLineas.add_to(mapa)
     Recorrido.add_to(mapa)
     
-    folium.LayerControl().add_to(mapa)
+    folium.LayerControl( draggable = True).add_to(mapa)
 
     if inicial is not None:
         display(mapa)
-        display(InicioFinal, horaBoton)
-    # Mostrar el mapa
+        interfaz(True)
+        
 display(map)
-display(InicioFinal, horaBoton)    
-# Mostrar el mapa inicial
-display_map()
-
+interfaz(True)   
 # %%
