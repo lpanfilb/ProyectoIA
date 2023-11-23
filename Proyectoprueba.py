@@ -29,6 +29,7 @@ H = G.copy()
 nodosAbiertos = []
 nodosCerrados = []
 path = []
+pathAux = []
 Hora = None
 inicial = None
 final = None
@@ -45,6 +46,9 @@ def caminoMasCorto():
     path.append(final)
     nodosCerrados.clear()
     checkPath(final)
+    pathAux.append([final,final , CheckColor(final,final)])
+
+
     
 def caminoMasCortoRec(nuevo):
     global nodosAbiertos
@@ -100,7 +104,11 @@ def checkPath(final):
     if  Padre != final:
         path.append(Padre)
         checkPath(Padre)
-        
+    else:
+        pathAux.append([Padre, path[len(path)-2] , CheckColor(final,final)])
+
+    if CheckColor(Padre, Padre) is not CheckColor(final, final):
+        pathAux.append([Padre, final, CheckColor(final, final)])   
 #----------Creacion Mapa------------
 # Crear un mapa centrado en las coordenadas iniciales
 map = folium.Map(location=[Coords['X'].mean(), Coords['Y'].mean()], zoom_start=13)
@@ -123,6 +131,7 @@ for edge in G.edges():
 nodosAbiertos = []
 nodosCerrados = []
 path = []
+pathAux = []
 Hora = None
 inicial = None
 final = None
@@ -157,9 +166,12 @@ def interfaz(correcto):
 
     calculate_button_err = widgets.Button(description="Recalcular Camino", button_style='danger', style={'button_width': 'initial'})
     calculate_button_err.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
-    
-    # display(clear=True)
-    
+
+   
+    if inicial is None:
+        display(map)
+    else:
+        camino()
     if correcto:
         display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
                 widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
@@ -168,7 +180,133 @@ def interfaz(correcto):
                 widgets.HBox([start_node_dropdown, end_node_dropdown]),
                 widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
     
+def camino():
+    html_code = """
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .parada {
+            margin: 10px;
+            padding: 10px;
+            
+            display: inline-block;
+            border-radius: 10px;
+        }
+
+        .dots-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .dot {
+            height: 10px;
+            width: 10px;
+            margin-right: 10px;
+            border-radius: 10px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        
+
+        .dot:nth-child(1) {
+            animation-delay: -0.3s;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: -0.1s;
+        }
+
+        .dot:nth-child(3) {
+            animation-delay: 0.1s;
+        }
+        .dot:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+        
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
+                filter: brightness(40%);
+                
+            }
+
+            50% {
+                transform: scale(1.2);
+                box-shadow: 0 0 0 10px rgba(178, 212, 252, 0);
+                filter: brightness(100%);
+                
+            }
+
+            100% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
+                filter: brightness(60%);
+            }
+        }
+        
+        .flecha {
+            display: inline-block;
+            width = 30px;
+            margin: 10 10px;
+        }
+
+        .linea {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            
+        }
+
+        .linea-green {
+            background-color: #008000; /* Verde */
+            
+        }
+
+        .linea-blue {
+            background-color: #0000fb; /* Azul */
+            
+        }
+
+        .linea-yellow {
+            background-color: #ffff00; /* Amarilla */
+            
+        }
+
+        .linea-red {
+            background-color: #f80000; /* Roja */
+            
+        }
+    </style>
+    <div class="ruta">
+    """
+
+    for parada in pathAux:
+        html_code += """
+        <div class="parada {linea}">
+            <section class="dots-container">
+                <div class="linea ">{linea}</div>
+                <div class="dot linea-{color}"></div>
+                <div class="dot linea-{color}"></div>
+                <div class="dot linea-{color}"></div>
+                <div class="dot linea-{color}"></div>
+                <div class="linea ">{otra_linea}</div>
+            </section>
+        </div>
+        """.format(linea=parada[0], otra_linea=parada[1], color = parada[2])
+        
+    html_code += "</div>"
     
+    display(widgets.HTML(html_code))
+    print(pathAux)
 
 # Función para actualizar el mapa cuando cambian los nodos de inicio y destino
 def update_map(start_node, end_node, hora, button):
@@ -178,6 +316,7 @@ def update_map(start_node, end_node, hora, button):
         interfaz(False)
         return
     path.clear()
+    pathAux.clear()
     inicial = start_node
     final = end_node
     Hora = hora.hour
@@ -222,10 +361,11 @@ def display_map():
     for i in range(len(path) - 1):
         G_dirigido.add_edge(path[i], path[i+1])
     # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
+    
     for index, row in Coords.iterrows():
         if row['Coordenadas'] in path:
             folium.Marker(location=[row['X'], row['Y']],icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
- 
+            
     for edge in G_dirigido.edges():
         coord_inicial = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
         coord_final = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
@@ -237,10 +377,10 @@ def display_map():
     
     folium.LayerControl( draggable = True).add_to(mapa)
 
-    if inicial is not None:
-        display(mapa)
-        interfaz(True)
+    display(clear=True)
+    display(mapa)
+    interfaz(True)
         
-display(map)
+
 interfaz(True)   
 # %%
