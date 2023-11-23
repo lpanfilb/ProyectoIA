@@ -185,21 +185,23 @@ def camino():
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            align-items: left;
         }
 
         .parada {
-            margin: 10px;
-            padding: 10px;
+            margin: 0;
+            padding: 0;
             
             display: inline-block;
+            text-align: left;
             border-radius: 10px;
         }
 
         .dots-container {
             display: flex;
+            margin: 0;
             align-items: center;
-            justify-content: center;
             height: 100%;
             width: 100%;
         }
@@ -209,38 +211,32 @@ def camino():
             width: 10px;
             margin-right: 10px;
             border-radius: 10px;
-            animation: pulse 1.5s infinite ease-in-out;
+            animation: pulse 2s infinite ease-in-out;
         }
 
-        
-
-        .dot:nth-child(1) {
+        .posicion1 {
             animation-delay: -0.3s;
         }
-
-        .dot:nth-child(2) {
+        
+        posicion2{
             animation-delay: -0.1s;
         }
-
-        .dot:nth-child(3) {
+        
+        posicion3{
             animation-delay: 0.1s;
         }
-        .dot:nth-child(4) {
-            animation-delay: 0.3s;
-        }
-        
 
         @keyframes pulse {
             0% {
                 transform: scale(0.8);
                 box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
-                filter: brightness(40%);
+                filter: brightness(100%);
                 
             }
 
             50% {
                 transform: scale(1.2);
-                box-shadow: 0 0 0 10px rgba(178, 212, 252, 0);
+                box-shadow: 0 0 0 0 rgba(178, 212, 252, 0);
                 filter: brightness(100%);
                 
             }
@@ -248,19 +244,13 @@ def camino():
             100% {
                 transform: scale(0.8);
                 box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
-                filter: brightness(60%);
+                filter: brightness(100%);
             }
-        }
-        
-        .flecha {
-            display: inline-block;
-            width = 30px;
-            margin: 10 10px;
         }
 
         .linea {
             display: inline-block;
-            padding: 5px 10px;
+            padding: 0 0;
             border-radius: 5px;
             font-weight: bold;
             
@@ -286,24 +276,28 @@ def camino():
             
         }
     </style>
-    <div class="ruta">
+    <div>
     """
 
     for parada in pathAux:
-        html_code += """
-        <div class="parada {linea}">
-            <section class="dots-container">
-                <div class="linea ">{linea}</div>
-                <div class="dot linea-{color}"></div>
-                <div class="dot linea-{color}"></div>
-                <div class="dot linea-{color}"></div>
-                <div class="dot linea-{color}"></div>
-                <div class="linea ">{otra_linea}</div>
-            </section>
-        </div>
-        """.format(linea=parada[0], otra_linea=parada[1], color = parada[2])
-        
-    html_code += "</div>"
+        if(parada[0]!=parada[1]):
+            html_code += """
+            <div class="parada">
+                    <div class="linea">{linea}</div>
+                    <div class="dot linea-{color} posicion1"></div>
+                    <section class="dots-container">
+                        <div class="dot linea-{color} posicion2"></div>
+                        <div class="linea">En dirección {otra_linea}</div>
+                    </section>
+                    <div class="dot linea-{color} posicion3"></div>
+             
+            
+            """.format(linea=parada[0], otra_linea=parada[1], color = parada[2])
+        else:
+            html_code += """
+            <div class="linea">{linea}</div>
+            """.format(linea=parada[0])
+    html_code += "</div></div>"
     
     display(widgets.HTML(html_code))
     print(pathAux)
