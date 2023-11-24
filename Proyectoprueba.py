@@ -167,20 +167,25 @@ def interfaz(correcto):
     calculate_button_err = widgets.Button(description="Recalcular Camino", button_style='danger', style={'button_width': 'initial'})
     calculate_button_err.on_click(lambda btn: update_map(start_node_dropdown.value, end_node_dropdown.value, hora_dropdown.value, btn))
 
-   
+    boton_camino = widgets.Button(description="Ruta simplificada", button_style='info')
+    boton_camino.on_click(lambda btn: caminosimple())
+    
     if inicial is None:
         display(map)
     else:
         camino()
     if correcto:
         display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
-                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
+                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button, boton_camino]))
     else: 
-        display(widgets.HTML("<p style='color:red;font-weight:bold;'>Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
+        display(widgets.HTML("<p style='color:red;font-weight:bold;'>ERROR: Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
                 widgets.HBox([start_node_dropdown, end_node_dropdown]),
                 widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
     
 def camino():
+    print(pathAux)
+
+def caminosimple():
     html_code = """
     <style>
         body {
@@ -212,6 +217,16 @@ def camino():
             margin-right: 10px;
             border-radius: 10px;
             animation: pulse 2s infinite ease-in-out;
+        }
+
+        .punto {
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border: 2px solid black;
+            margin-right: 10px;
+            margin-left: 0px;
+            border-radius: 50%;
         }
 
         .posicion1 {
@@ -283,24 +298,28 @@ def camino():
         if(parada[0]!=parada[1]):
             html_code += """
             <div class="parada">
-                    <div class="linea">{linea}</div>
+                    <section class="dots-container">
+                        <div class="punto"></div>
+                        <div class="linea">{linea}</div>
+                    </section>
                     <div class="dot linea-{color} posicion1"></div>
                     <section class="dots-container">
                         <div class="dot linea-{color} posicion2"></div>
                         <div class="linea">En dirección {otra_linea}</div>
                     </section>
                     <div class="dot linea-{color} posicion3"></div>
-             
+                    
             
             """.format(linea=parada[0], otra_linea=parada[1], color = parada[2])
         else:
             html_code += """
-            <div class="linea">{linea}</div>
+                    <section class="dots-container">
+                        <div class="punto"></div>
+                        <div class="linea">{linea}</div>
+                    </section>
             """.format(linea=parada[0])
     html_code += "</div></div>"
-    
     display(widgets.HTML(html_code))
-    print(pathAux)
 
 # Función para actualizar el mapa cuando cambian los nodos de inicio y destino
 def update_map(start_node, end_node, hora, button):
