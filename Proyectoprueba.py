@@ -326,6 +326,8 @@ def update_map(start_node, end_node, hora, button):
     global inicial, final, Hora, path
     
     if start_node == "Seleccione Inicio" or end_node == "Seleccione Destino" or not (5 <= hora.hour <= 23):
+        inicial = None
+        display(clear=True)
         interfaz(False)
         return
     path.clear()
@@ -348,7 +350,9 @@ def display_map():
     Recorrido = folium.FeatureGroup(name="Ruta Recomendada", show=True).add_to(map)
     
     
-    def add_arrow(Recorrido, coord_inicial, coord_final, color='blue'):
+    def add_arrow(Recorrido, coord_inicial, coord_final, color, ini, fina):
+        
+        
         # Agregar la línea
         folium.PolyLine([coord_inicial, coord_final], color=color, weight=3.5, opacity=1).add_to(Recorrido)
         # Calcular el ángulo de la flecha
@@ -356,7 +360,130 @@ def display_map():
         arrow_middle = [0.5 * (coord_inicial[0] + coord_final[0]), 0.5 * (coord_inicial[1] + coord_final[1])]
         arrow_heading = plugins.BeautifyIcon(icon='arrow-down', icon_shape='circle', border_color=color, text_color=color, inner_icon_style='transform: rotate({0}deg);'.format(arrow_angle))
         # Agregar la "flecha"
-        folium.Marker(location=arrow_middle, icon=arrow_heading).add_to(Recorrido)
+        html_flechas = """
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+
+            .parada {
+                margin: 10px;
+                padding: 10px;
+                
+                display: inline-block;
+                border-radius: 10px;
+            }
+
+            .dots-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                width: 100%;
+            }
+
+            .dot {
+                height: 10px;
+                width: 10px;
+                margin-right: 10px;
+                border-radius: 10px;
+                animation: pulse 1.5s infinite ease-in-out;
+            }
+
+            .dot:nth-child(1) {
+                animation-delay: -0.3s;
+            }
+
+            .dot:nth-child(2) {
+                animation-delay: -0.1s;
+            }
+
+            .dot:nth-child(3) {
+                animation-delay: 0.1s;
+            }
+            .dot:nth-child(4) {
+                animation-delay: 0.3s;
+            }
+            
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(0.8);
+                    box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
+                    filter: brightness(40%);
+                    
+                }
+
+                50% {
+                    transform: scale(1.2);
+                    box-shadow: 0 0 0 10px rgba(178, 212, 252, 0);
+                    filter: brightness(100%);
+                    
+                }
+
+                100% {
+                    transform: scale(0.8);
+                    box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
+                    filter: brightness(60%);
+                }
+            }
+            
+            .flecha {
+                display: inline-block;
+                width = 30px;
+                margin: 10 10px;
+            }
+
+            .linea {
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+                
+            }
+
+            .linea-green {
+                background-color: #008000; /* Verde */
+                
+            }
+
+            .linea-blue {
+                background-color: #0000fb; /* Azul */
+                
+            }
+
+            .linea-yellow {
+                background-color: #ffff00; /* Amarilla */
+                
+            }
+
+            .linea-red {
+                background-color: #f80000; /* Roja */
+                
+            }
+        </style>
+        <div class="ruta">
+        """
+
+        
+        html_flechas += """
+            <div class="parada {linea}">
+                <section class="dots-container">
+                    <div class="linea ">{linea}</div>
+                    <div class="dot linea-{color}"></div>
+                    <div class="dot linea-{color}"></div>
+                    <div class="dot linea-{color}"></div>
+                    <div class="linea linea-{color}">Direccion:{otra_linea}</div>
+                </section>
+            </div>
+            """.format(linea=fina, otra_linea=ini, color = color)
+            
+        html_flechas += "</div>"
+        
+        popupinc = folium.Popup(html = html_flechas,show = False, max_width=2650)
+
+        folium.Marker(location=arrow_middle,popup = popupinc, icon=arrow_heading).add_to(Recorrido)
     
     def calcular_angulo(coord_inicial, coord_final):
         lat_inicial, long_inicial = coord_inicial
@@ -378,13 +505,15 @@ def display_map():
     for index, row in Coords.iterrows():
         if row['Coordenadas'] in path:
             folium.Marker(location=[row['X'], row['Y']],icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
-            
+    
+    
+    
     for edge in G_dirigido.edges():
         coord_inicial = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
         coord_final = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
     # Agregar la línea con "flecha"
-        add_arrow(Recorrido, coord_inicial, coord_final, color=CheckColor(edge[0], edge[1]))
-
+        add_arrow(Recorrido, coord_inicial, coord_final, color=CheckColor(edge[0], edge[1]), ini = edge[0], fina = edge[1])
+    
     TotalLineas.add_to(mapa)
     Recorrido.add_to(mapa)
     
