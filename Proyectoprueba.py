@@ -182,19 +182,18 @@ def interfaz(correcto):
     #Distintas interfaces segun sea el caso (el menu de error no es igual que el inicial ni igual al de camino correcto)
     if inicial is None:
         display(map)
-    else:
-        camino()
-    if correcto:
         display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
-                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button, boton_camino]))
-    else: 
-        display(widgets.HTML("<p style='color:red;font-weight:bold;'>ERROR: Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
-                widgets.HBox([start_node_dropdown, end_node_dropdown]),
-                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
+                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
+    else:
+        if correcto:
+            display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
+                    widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button, boton_camino]))
+        else: 
+            display(widgets.HTML("<p style='color:red;font-weight:bold;'>ERROR: Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
+                    widgets.HBox([start_node_dropdown, end_node_dropdown]),
+                    widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
     
-def camino(): #Muestra el pathAux (para debuggear)
-    print(pathAux)
-
+        
 def caminosimple(): #Muestra la ruta simplificada, el codigo es html/css ya que es lo que usamos para mostrar por pantalla el resultado
     html_code = """
     <style>
@@ -493,9 +492,9 @@ def display_map():
             
         html_flechas += "</div>"
         
-        popupinc = folium.Popup(html = html_flechas,show = False, max_width=2650) #Metemos todo el codigo html_flechas en la variable popupinc para luego llamarlo mas facilmente
+        popupflecha = folium.Popup(html = html_flechas,show = False, max_width=2650) #Metemos todo el codigo html_flechas en la variable popupinc para luego llamarlo mas facilmente
 
-        folium.Marker(location=arrow_middle,popup = popupinc, icon=arrow_heading).add_to(Recorrido) #Añadimos las flechas al mapa con su popup correspondiente (popupinc) y con su icono apuntando en direccion al siguiente nodo
+        folium.Marker(location=arrow_middle,popup = popupflecha, icon=arrow_heading).add_to(Recorrido) #Añadimos las flechas al mapa con su popup correspondiente (popupinc) y con su icono apuntando en direccion al siguiente nodo
     
     def calcular_angulo(coord_inicial, coord_final): #Calcula el angulo al que apunta la flecha comparando las posiciones de los nodos contiguos
         lat_inicial, long_inicial = coord_inicial
@@ -513,16 +512,213 @@ def display_map():
     for i in range(len(path) - 1):                                  #Para cada iteracion posible (paso en el camino)          
         G_dirigido.add_edge(path[i], path[i+1])                     #Añadimos la arista entre los nodos del grafo
     
-    # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
+    html_parada = """
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            align-items: left;
+        }
+
+        .parada {
+            margin: 0;
+            padding: 0;
+            
+            display: inline-block;
+            text-align: left;
+            border-radius: 10px;
+        }
+
+        .dots-container {
+            display: flex;
+            margin: 0;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        .dot {
+            height: 10px;
+            width: 10px;
+            margin-right: 10px;
+            border-radius: 10px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .punto {
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border: 2px solid black;
+            margin-right: 10px;
+            margin-left: 0px;
+            border-radius: 50%;
+        }
+
+        .posicion1 {
+            animation-delay: -0.3s;
+        }
+        
+        posicion2{
+            animation-delay: -0.1s;
+        }
+        
+        posicion3{
+            animation-delay: 0.1s;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
+                filter: brightness(100%);
+                
+            }
+
+            50% {
+                transform: scale(1.2);
+                box-shadow: 0 0 0 0 rgba(178, 212, 252, 0);
+                filter: brightness(100%);
+                
+            }
+
+            100% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(178, 212, 252, 0.7);
+                filter: brightness(100%);
+            }
+        }
+
+        .linea {
+            display: inline-block;
+            padding: 0 0;
+            border-radius: 5px;
+            font-weight: bold;
+            
+        }
+
+        .linea-green {
+            background-color: #008000; /* Verde */
+            
+        }
+
+        .linea-blue {
+            background-color: #0000fb; /* Azul */
+            
+        }
+
+        .linea-yellow {
+            background-color: #ffff00; /* Amarilla */
+            
+        }
+
+        .linea-red {
+            background-color: #f80000; /* Roja */
+            
+        }
+    </style>
+    <div>
+    """
+
+    for parada in pathAux: #Para cada parada del pathAux creamos las divs o sections necesarias (en pathAux esta la parada inicial, la siguiente parada (direccion en la que ir) y color de la linea a seguir)
+        if(parada[0]!=parada[1]): #Como el ultimo elemento del pathAux es final-final, colorfinal es un caso especial (va al else)
+            html_code += """
+            <div class="parada">
+                    <section class="dots-container">
+                        <div class="punto"></div>
+                        <div class="linea">{linea}</div>
+                    </section>
+                    <div class="dot linea-{color} posicion1"></div>
+                    <section class="dots-container">
+                        <div class="dot linea-{color} posicion2"></div>
+                        <div class="linea">En dirección {otra_linea}</div>
+                    </section>
+                    <div class="dot linea-{color} posicion3"></div>
+                    
+            
+            """.format(linea=parada[0], otra_linea=parada[1], color = parada[2])
+        else:   #CASO ESPECIAL FINAL
+            html_code += """
+                    <section class="dots-container">
+                        <div class="punto"></div>
+                        <div class="linea">{linea}</div>
+                    </section>
+            """.format(linea=parada[0])
+    html_parada += "</div></div>"
+    popupinc = folium.Popup(html = html_parada,show = False, max_width=2650)
+    
+    contenido_html = '''
+    <style>
+        .button {
+        width: 110px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        background-color: rgb(161, 255, 20);
+        border-radius: 30px;
+        color: rgb(19, 19, 19);
+        font-weight: 600;
+        border: none;
+        position: relative;
+        cursor: pointer;
+        transition-duration: .2s;
+        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.116);
+        padding-left: 8px;
+        transition-duration: .5s;
+        }
+
+        .svgIcon {
+        height: 25px;
+        transition-duration: 1.5s;
+        }
+
+        .bell path {
+        fill: rgb(19, 19, 19);
+        }
+
+        .button:hover {
+        background-color: rgb(192, 255, 20);
+        transition-duration: .5s;
+        }
+
+        .button:active {
+        transform: scale(0.97);
+        transition-duration: .2s;
+        }
+
+        .button:hover .svgIcon {
+        transform: rotate(250deg);
+        transition-duration: 1.5s;
+        }
+
+
+    </style>
+
+    <div>
+    <button class="button">
+    <svg class="svgIcon" viewBox="0 0 512 512" height="1em" xmlns="http://www.w3.org/2000/svg"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm50.7-186.9L162.4 380.6c-19.4 7.5-38.5-11.6-31-31l55.5-144.3c3.3-8.5 9.9-15.1 18.4-18.4l144.3-55.5c19.4-7.5 38.5 11.6 31 31L325.1 306.7c-3.2 8.5-9.9 15.1-18.4 18.4zM288 256a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"></path></svg>
+    Explore
+    </button>
+    '''
+    folium.Marker(location=[45.732047, 4.842442],draggable=True,icon = folium.DivIcon(html=contenido_html), popup=popupinc).add_to(Recorrido)
+
+    
+    
+    #folium.Marker(location=[Coords['X'].mean(), Coords['Y'].mean()],draggable=True,icon = plugins.BeautifyIcon(prefix = 'fa',border_color='transparent', background_color='transparent',border_width=0, inner_icon_style='font-size:30px; color: #1E3050', extraClasses ='fa-bounce' 'fa-xl'), popup=popupinc).add_to(Recorrido)
+
+    # Agregar los nodos del grafo dirigido
     for index, row in Coords.iterrows():
         if row['Coordenadas'] in path:
-            folium.Marker(location=[row['X'], row['Y']],icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
-     
+            folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
+    
+    # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
     for edge in G_dirigido.edges():
         coord_inicial = Coords.loc[Coords['Coordenadas'] == edge[0], ['X', 'Y']].values.flatten().tolist()
         coord_final = Coords.loc[Coords['Coordenadas'] == edge[1], ['X', 'Y']].values.flatten().tolist()
     
-    # Agregar la línea con "flecha"
+        # Agregar la línea con "flecha"
         add_arrow(Recorrido, coord_inicial, coord_final, color=CheckColor(edge[0], edge[1]), ini = edge[0], fina = edge[1])
     
     TotalLineas.add_to(mapa)  #Añadimos la opcion de mostrar el mapa completo a la interfaz
