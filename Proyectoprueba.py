@@ -122,7 +122,18 @@ TotalLineas = folium.FeatureGroup(name="Metro Lyon").add_to(map)
 
 # Agregar marcadores al mapa
 for index, row in Coords.iterrows():
-    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color='red', inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(TotalLineas)
+    color = CheckColor(row['Coordenadas'], row['Coordenadas'])
+    texto = row['Coordenadas']
+            
+    html_unico = f'''
+    <div style="text-align: center; margin: 0; padding: 0;">
+        <div class="ovalo" style="width: 100px; height: 50px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold; text-transform: uppercase; background-color: {color};">M</div>
+        <div class="linea" style="display: inline-block; padding: 0 0; font-size: 36px;font-style: normal;font-weight: 400;">{texto}</div>
+    </div>
+    '''
+
+    popupParada = folium.Popup(html = html_unico, show=False, max_width=2650)
+    folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color='red', inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=popupParada).add_to(TotalLineas)
 
 # Agregar aristas al mapa completo 
 for edge in G.edges():
@@ -182,17 +193,19 @@ def interfaz(correcto):
     #Distintas interfaces segun sea el caso (el menu de error no es igual que el inicial ni igual al de camino correcto)
     if inicial is None:
         display(map)
-        display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
-                widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
-    else:
         if correcto:
             display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
-                    widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button, boton_camino]))
+                    widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
         else: 
             display(widgets.HTML("<p style='color:red;font-weight:bold;'>ERROR: Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
                     widgets.HBox([start_node_dropdown, end_node_dropdown]),
                     widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
     
+    else:
+        
+            display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
+                    widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button, boton_camino]))
+        
         
 def caminosimple(): #Muestra la ruta simplificada, el codigo es html/css ya que es lo que usamos para mostrar por pantalla el resultado
     html_code = """
@@ -490,11 +503,10 @@ def display_map():
             </div>
             """.format(linea=fina, otra_linea=ini, color = color) #Damos formato al menu que sale de la flecha al clickarla (colores y paradas que conecta)
             
-        html_flechas += "</div>"
         
         popupflecha = folium.Popup(html = html_flechas,show = False, max_width=2650) #Metemos todo el codigo html_flechas en la variable popupinc para luego llamarlo mas facilmente
 
-        folium.Marker(location=arrow_middle,popup = popupflecha, icon=arrow_heading).add_to(Recorrido) #Añadimos las flechas al mapa con su popup correspondiente (popupinc) y con su icono apuntando en direccion al siguiente nodo
+        folium.Marker(location=arrow_middle, popup = popupflecha, icon=arrow_heading).add_to(Recorrido) #Añadimos las flechas al mapa con su popup correspondiente (popupinc) y con su icono apuntando en direccion al siguiente nodo
     
     def calcular_angulo(coord_inicial, coord_final): #Calcula el angulo al que apunta la flecha comparando las posiciones de los nodos contiguos
         lat_inicial, long_inicial = coord_inicial
@@ -622,7 +634,7 @@ def display_map():
 
     for parada in pathAux: #Para cada parada del pathAux creamos las divs o sections necesarias (en pathAux esta la parada inicial, la siguiente parada (direccion en la que ir) y color de la linea a seguir)
         if(parada[0]!=parada[1]): #Como el ultimo elemento del pathAux es final-final, colorfinal es un caso especial (va al else)
-            html_code += """
+            html_parada += """
             <div class="parada">
                     <section class="dots-container">
                         <div class="punto"></div>
@@ -638,7 +650,7 @@ def display_map():
             
             """.format(linea=parada[0], otra_linea=parada[1], color = parada[2])
         else:   #CASO ESPECIAL FINAL
-            html_code += """
+            html_parada += """
                     <section class="dots-container">
                         <div class="punto"></div>
                         <div class="linea">{linea}</div>
@@ -649,69 +661,72 @@ def display_map():
     
     contenido_html = '''
     <style>
-        .button {
-        width: 110px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        gap: 10px;
-        background-color: rgb(161, 255, 20);
-        border-radius: 30px;
-        color: rgb(19, 19, 19);
-        font-weight: 600;
-        border: none;
+        button {
+        padding: 15px 25px;
+        border: unset;
+        border-radius: 15px;
+        color: #212121;
+        z-index: 1;
+        background: #e8e8e8;
         position: relative;
-        cursor: pointer;
-        transition-duration: .2s;
-        box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.116);
-        padding-left: 8px;
-        transition-duration: .5s;
+        font-weight: 1000;
+        font-size: 17px;
+        -webkit-box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+        box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+        transition: all 250ms;
+        overflow: hidden;
         }
 
-        .svgIcon {
-        height: 25px;
-        transition-duration: 1.5s;
+        button::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 0;
+        border-radius: 15px;
+        background-color: #212121;
+        z-index: -1;
+        -webkit-box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+        box-shadow: 4px 8px 19px -3px rgba(0,0,0,0.27);
+        transition: all 250ms
         }
 
-        .bell path {
-        fill: rgb(19, 19, 19);
+        button:hover {
+        color: #e8e8e8;
         }
 
-        .button:hover {
-        background-color: rgb(192, 255, 20);
-        transition-duration: .5s;
-        }
-
-        .button:active {
-        transform: scale(0.97);
-        transition-duration: .2s;
-        }
-
-        .button:hover .svgIcon {
-        transform: rotate(250deg);
-        transition-duration: 1.5s;
+        button:hover::before {
+        width: 100%;
         }
 
 
     </style>
 
     <div>
-    <button class="button">
-    <svg class="svgIcon" viewBox="0 0 512 512" height="1em" xmlns="http://www.w3.org/2000/svg"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm50.7-186.9L162.4 380.6c-19.4 7.5-38.5-11.6-31-31l55.5-144.3c3.3-8.5 9.9-15.1 18.4-18.4l144.3-55.5c19.4-7.5 38.5 11.6 31 31L325.1 306.7c-3.2 8.5-9.9 15.1-18.4 18.4zM288 256a32 32 0 1 0 -64 0 32 32 0 1 0 64 0z"></path></svg>
-    Explore
+    <button> Camino Completo
     </button>
     '''
     folium.Marker(location=[45.732047, 4.842442],draggable=True,icon = folium.DivIcon(html=contenido_html), popup=popupinc).add_to(Recorrido)
 
     
-    
     #folium.Marker(location=[Coords['X'].mean(), Coords['Y'].mean()],draggable=True,icon = plugins.BeautifyIcon(prefix = 'fa',border_color='transparent', background_color='transparent',border_width=0, inner_icon_style='font-size:30px; color: #1E3050', extraClasses ='fa-bounce' 'fa-xl'), popup=popupinc).add_to(Recorrido)
-
+    
     # Agregar los nodos del grafo dirigido
     for index, row in Coords.iterrows():
         if row['Coordenadas'] in path:
-            folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=row['Coordenadas']).add_to(Recorrido)
+            color = CheckColor(row['Coordenadas'], row['Coordenadas'])
+            texto = row['Coordenadas']
+            
+            html_unico = f'''
+            <div style="text-align: center; margin: 0; padding: 0;">
+                <div class="ovalo" style="width: 100px; height: 50px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold; text-transform: uppercase; background-color: {color};">M</div>
+                <div class="linea" style="display: inline-block; padding: 0 0; font-size: 36px;font-style: normal;font-weight: 400;">{texto}</div>
+            </div>
+            '''
+
+            popupParada = folium.Popup(html = html_unico, show=False, max_width=2650)
+            folium.Marker(location=[row['X'], row['Y']], icon = plugins.BeautifyIcon(icon='m', border_color='black', border_width=1, background_color=CheckColor(row['Coordenadas'], row['Coordenadas']), inner_icon_style='transform: translate(0px, 30%); color:#FFFFFF'), popup=popupParada, max_width=2650).add_to(Recorrido)
     
     # Agregar polilíneas al mapa para representar las aristas del grafo dirigido
     for edge in G_dirigido.edges():
