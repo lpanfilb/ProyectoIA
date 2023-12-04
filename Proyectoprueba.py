@@ -197,7 +197,7 @@ def interfaz(correcto):
             display(widgets.HBox([start_node_dropdown, end_node_dropdown]),
                     widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button]))
         else: 
-            display(widgets.HTML("<p style='color:red;font-weight:bold;'>ERROR: Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
+            display(widgets.HTML("<p style='color:red;font-weight:bold;'>RUTA NO VALIDA: Seleccione una parada válida y una hora en el rango de 5:00 a 23:00.</p>"),
                     widgets.HBox([start_node_dropdown, end_node_dropdown]),
                     widgets.HBox([widgets.Box(layout=widgets.Layout(width='8px')),hora_dropdown,widgets.Box(layout=widgets.Layout(width='234px')), calculate_button_err]))
     
@@ -383,6 +383,8 @@ def display_map():
         arrow_middle = [0.5 * (coord_inicial[0] + coord_final[0]), 0.5 * (coord_inicial[1] + coord_final[1])]
         arrow_heading = plugins.BeautifyIcon(icon='arrow-down', icon_shape='circle', border_color=color, text_color=color, inner_icon_style='transform: rotate({0}deg);'.format(arrow_angle))
        
+        iniCol = CheckColor(ini, ini)
+        finaCol = CheckColor(fina, fina)
         # Agregar la "flecha" con los estilos css que le definimos
         html_flechas = """
         <style>
@@ -493,15 +495,24 @@ def display_map():
         
         html_flechas += """
             <div class="parada {linea}">
+            
                 <section class="dots-container">
-                    <div class="linea ">{linea}</div>
-                    <div class="dot linea-{color}"></div>
-                    <div class="dot linea-{color}"></div>
-                    <div class="dot linea-{color}"></div>
-                    <div class="linea linea-{color}">Direccion:{otra_linea}</div>
-                </section>
+                    <div style="text-align: center; margin: 0; padding: 0;">
+                <div class="ovalo" style="width: 100px; height: 50px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold; text-transform: uppercase; background-color: {iniCol};">M</div>
+                <div class="linea" style="display: inline-block; padding: 0 0; font-size: 36px;font-style: normal;font-weight: 400;">{linea}</div>
             </div>
-            """.format(linea=fina, otra_linea=ini, color = color) #Damos formato al menu que sale de la flecha al clickarla (colores y paradas que conecta)
+                    <div class="dot linea-{color}"></div>
+                    <div class="dot linea-{color}"></div>
+                    <div class="dot linea-{color}"></div>
+                    <div style="text-align: center; margin: 0; padding: 0;">
+                <div class="ovalo" style="width: 100px; height: 50px; border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; color: white; font-size: 40px; font-weight: bold; text-transform: uppercase; background-color: {finaCol};">M</div>
+                <div class="linea" style="display: inline-block; padding: 0 0; font-size: 36px;font-style: normal;font-weight: 400;">{otra_linea}</div>
+            </div>
+                </section>
+                
+            
+            </div>
+            """.format(linea=fina, otra_linea=ini, color = color, iniCol=finaCol, finaCol=iniCol) #Damos formato al menu que sale de la flecha al clickarla (colores y paradas que conecta)
             
         
         popupflecha = folium.Popup(html = html_flechas,show = False, max_width=2650) #Metemos todo el codigo html_flechas en la variable popupinc para luego llamarlo mas facilmente
@@ -704,7 +715,7 @@ def display_map():
     </style>
 
     <div>
-    <button> Camino Completo
+    <button> Ruta
     </button>
     '''
     folium.Marker(location=[45.732047, 4.842442],draggable=True,icon = folium.DivIcon(html=contenido_html), popup=popupinc).add_to(Recorrido)
