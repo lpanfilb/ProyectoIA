@@ -1,5 +1,22 @@
 
+
+# Universidad Politécnica de Madrid
+# Escuela Técnica Superior de Ingenieros Informáticos
+
+# Caso particular: Estaciones de metro de Lyon
+
+# CURSO 2023-2024
+
+# GRUPO 8:
+# • Marcos Ayuso Camarena (200369)
+# • Jaime Perán De Montes-Jovellar (200274)
+# • Alberto González López (140332)
+# • Lucas Panfil Balmaseda (180342)
+# • Francisco Chicote Martín (200256)
+
+
 #%%
+
 #Librerias y codigo para su ejecucion
 
 from datetime import datetime
